@@ -71,7 +71,14 @@
 5. **配置插件**：编辑游戏目录下的 `AutoTranslator/Config.ini`：
    ```ini
    [Service]
-   Endpoint=http://localhost:6800
+   Endpoint=CustomTranslate
+   FallbackEndpoint=
+   ...
+   [Custom]
+   Url=http://localhost:6800
+   EnableShortDelay=true
+   DisableSpamChecks=true
+   
    ```
 
 ---
