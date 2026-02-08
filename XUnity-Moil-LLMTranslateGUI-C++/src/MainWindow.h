@@ -58,6 +58,12 @@ private slots:
     void onServerWorkStarted();     
     void onServerWorkFinished(bool success); 
 
+    // 🔥 CAN: 新增术语表右键菜单槽
+    void onGlossaryContextMenu(const QPoint &pos); 
+
+    // 🔥 CAN: 术语表更改槽函数
+    void onGlossaryChanged();
+
 private:
     void setupUi();
     void loadConfigToUi();
@@ -100,6 +106,8 @@ private:
     // ✅ 新增：锁定系统提示词的复选框
     QCheckBox *chkLockSysPrompt; 
     
+    QCheckBox *chkLockGlossary;
+
     QPushButton *btnSelectGlossary; 
     // 📝 新增：编辑按钮
     QPushButton *btnOpenAuto;
