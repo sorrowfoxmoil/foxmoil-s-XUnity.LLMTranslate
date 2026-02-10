@@ -982,29 +982,34 @@ AppConfig MainWindow::getUiConfig() {
 void MainWindow::toggleControls(bool running) {
     m_isServerRunning = running;
 
-    // 1. 核心网络配置锁定 (防止运行时修改端口或地址导致冲突)
-    apiAddressCombo->setEnabled(!running);
-    apiKeyEdit->setEnabled(!running);
+    // --- ✅ 关键修改：解除锁定以支持热重载 ---
+    // 允许在运行时修改 API 地址、密钥、模型和参数
+    apiAddressCombo->setEnabled(true); 
+    apiKeyEdit->setEnabled(true);
+    modelCombo->setEnabled(true);      // 确保模型选择框也保持开启
+    tempSpin->setEnabled(true);        // 允许运行时调整温度
+    contextSpin->setEnabled(true);     // 允许运行时调整上下文记忆
+
+    // 只有端口和线程数建议保持锁定 (修改这些通常需要彻底重启 Socket 或线程池)
     portEdit->setEnabled(!running);
     threadSpin->setEnabled(!running);
     
-    // 2. 术语表逻辑 (UNFROZEN: 允许实时切换)
+    // 2. 术语表逻辑 (UNFROZEN: 保持第一份代码的灵活性)
     glossaryCombo->setEnabled(true); 
 
-    // 3. 🔥 HUD 按钮修复: 确保在任何状态下都不被冻结
-    // HUD 是用户在翻译时切换到简洁模式的关键，必须始终可用
-    hudBtn->setEnabled(true);
+    // 3. 🔥 HUD 按钮修复: 只在启动服务后才可使用
+    hudBtn->setEnabled(running);
 
-    // 4. 省略号按钮交互 (平时熄灭，悬浮点亮，保留 ToolTip)
+    // 4. 省略号按钮交互 (保留第一份代码的高级视觉反馈)
     QString baseDescription = (m_currentLang == 0) 
-        ? "Select or manage glossary files (.txt)" 
-        : "选择或管理术语表文件 (.txt)";
+        ? "Select glossary files (.txt)" 
+        : "选择术语表文件 (.txt)";
 
     if (running) {
         // 追加运行状态提示
         QString runningNotice = (m_currentLang == 0)
-            ? "\n\n(ℹ️ Server is running: You can still click to change paths)"
-            : "\n\n(ℹ️ 服务运行中：您仍可点击此处更改路径)";
+            ? "\n\n(ℹ️ Server is running: You can still click to change paths \n\n You can right-click on the glossary path to open the clean menu)"
+            : "\n\n(ℹ️ 服务运行中：您仍可点击此处更改路径 \n\n 您可以在术语表路径上右键以打开清理菜单)";
         btnSelectGlossary->setToolTip(baseDescription + runningNotice);
 
         // 样式：平时低调，悬浮点亮
@@ -1030,14 +1035,19 @@ void MainWindow::toggleControls(bool running) {
     langBtn->setEnabled(true);
     clearCtxBtn->setEnabled(true); // 运行时允许手动清空记忆
 
-    // 6. 服务控制按钮切换
+    // 6. 服务控制按钮切换与样式刷新
     if (running) {
         startBtn->setText(m_currentLang == 0 ? "Reload Config" : "重载配置");
-        startBtn->setEnabled(true); // 允许点击进行热重载
+        startBtn->setObjectName("btnReload"); // 应用热重载蓝色样式
     } else {
         startBtn->setText(m_currentLang == 0 ? "Start Server" : "启动服务");
+        startBtn->setObjectName("btnStart");  // 恢复启动绿色样式
     }
     stopBtn->setEnabled(running);
+
+    // 🔥 必须执行样式重刷，否则 ObjectName 的改变不会立即触发 CSS 颜色变化
+    startBtn->style()->unpolish(startBtn);
+    startBtn->style()->polish(startBtn);
 }
 
 // 🔥 CRITICAL: Robust Hot Reload Logic from 1.txt / 关键：来自1.txt的鲁棒热重载逻辑
