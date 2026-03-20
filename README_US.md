@@ -21,88 +21,81 @@
 
 ## 🇬🇧 English Version
 
-### Introduction
-**XUnity LLM Translator GUI** is a high-performance translation proxy designed for Unity games. It functions as a local HTTP relay server, efficiently bridging **XUnity.AutoTranslator** requests to various Large Language Models (LLMs) such as Grok, DeepSeek, OpenAI, Gemini, and more.
+### 📖 Introduction
+**XUnity LLM Translator GUI** is a local translation proxy tool designed for Unity games. It functions as a lightweight local HTTP relay server, primarily used to bridge **XUnity.AutoTranslator** requests to various Large Language Models (e.g., Grok, DeepSeek, OpenAI, Gemini, Ollama).
 
-The project has fully migrated to a **C++ / Qt** architecture, providing ultra-low latency, high concurrency stability, and a modern interactive experience.
-
----
-
-### ✨ C++ Version Key Features
-
-#### 🚀 Exceptional Performance
-- **Native Async Architecture**: Built with C++17 and the Qt event loop for zero-blocking request dispatching.
-- **Concurrent Thread Management**: Integrated high-performance thread pool (via `httplib`) to handle multiple requests simultaneously, significantly increasing translation throughput.
-- **API Key Polling**: Supports multiple comma-separated API Keys with automatic round-robin load balancing.
-
-#### 🧠 Intelligent Logic
-- **Hot Reload**: Modify Model Name, API Key, System Prompt, or Temperature on the fly without stopping the service. Changes take effect immediately.
-- **Self-Evolving Glossary (RAG)**: Bridges with XUnity's glossary files. The model references existing terms and **actively discovers/extracts** new terminology from original texts via prompt engineering.
-- **Local Escape Freezing**: Built-in text preprocessing to protect game code escape characters, HTML tags, and special placeholders (e.g., `ZMCZ`), preventing them from being mistranslated by the LLM.
-
-#### 🎨 Modern Interaction
-- **HUD Mini-Window Mode**: One-click switch to a minimalist HUD overlay. Features a **3-color status light** (Green: Idle, Blue: Working, Red: Error) and real-time Token counter.
-- **Human-Friendly Error System**: Maps obscure HTTP error codes (401, 429, 500) and network timeouts (999) into clear, actionable advice in English/Chinese.
-- **10-Second Timeout Detection**: Enforces a strict timeout mechanism for API responses to prevent game logic deadlocks caused by provider server hangs.
-- **Multi-language & Themes**: Full bilingual support with one-click switching between Modern Dark and Fusion Light themes.
-- **Smart Presets**: Built-in endpoint presets for major API providers (OpenAI, DeepSeek, xAI, SiliconFlow) and local models (Ollama, LM Studio).
+Built with **C++17 / Qt**, this project aims to provide a visual configuration interface while maintaining low response latency and high concurrent request handling capabilities.
 
 ---
 
-### ⚠️ Version Comparison
+### 🛠️ Core Features
 
-| Feature | C++ Enhanced (Moil) | Python Original (Fox) |
-| :--- | :---: | :---: |
-| Latency | **Ultra-low (Native)** | Moderate (Interpreter) |
-| Hot Reload | ✅ Full Support | ❌ Restart Required |
-| Glossary | ✅ Auto-Extraction | ❌ Read-only |
-| Error Handling | ✅ Friendly Mapping | ⚠️ Basic Errors |
-| HUD Status Light | ✅ Built-in | ❌ None |
-| UI Stability | ✅ High (Qt Native) | ⚠️ Layout Shifts |
+#### 🎨 Dual UI Modes
+- **Classic & Modern Modes**: Provides two UI styles to switch between freely.
+  - **Classic Mode**: Simple design, removes complex transition animations and rendering. Recommended for older computers.
+  - **Modern Mode**: Focuses on transition animations, glassmorphism, and lighting details. Recommended for newer computers. 
+  *(Note: Thanks to Qt's underlying hardware acceleration, the actual performance impact difference between the two modes is minimal. Choose based on personal aesthetic preference.)*
+- **Built-in Glossary Editor**: Slide-out panel to edit the glossary (`_Substitutions.txt`) directly within the interface, featuring basic original/translated text syntax highlighting.
+
+#### 🧠 Translation Logic Handling
+- **Batch Routing Mode**: When enabled, the program attempts to automatically modify the game's `Config.ini`, spoofing the Google endpoint and routing it to the local port to support concurrent multi-line batch translation. The config is automatically restored when the service is stopped.
+- **Context Isolation (Anti-Bleed)**: Built-in local escape processing protects line breaks `[LF]` and game rich-text tags (e.g., `<T_0>`) before sending to the LLM. It forces the model to treat multi-line inputs as independent fragments, reducing hallucinations or logical contamination caused by the LLM trying to "auto-complete" the previous context.
+- **Glossary Evolution (RAG)**: Automatically reads the specified glossary as context reference during translation and attempts to extract unrecorded nouns to append to the file.
+
+#### 🚀 Concurrency & Service Control
+- **Asynchronous Processing**: Underlying thread pool based on `httplib`, supporting 64~256 concurrent threads.
+- **API Polling**: Supports entering multiple comma-separated API Keys, which the program will call in a round-robin manner during requests.
+- **Dynamic Hot Reload**: Modify the model name, API Keys, or system prompts while the service is running. Configurations take effect immediately on the next request.
+
+#### 🛡️ Monitoring & Fault Tolerance
+- **HUD Mini-Window**: Switch to a minimalist HUD window featuring a simple 3-color status light (Green/Cyan/Red) to indicate the current working state and a Token consumption tracker.
+- **Error Mapping & Timeouts**: Enforces a 10~40 second timeout mechanism for API requests to prevent game freezes caused by unresponsive long connections. Provides clear advice for common HTTP status codes (e.g., 401, 429).
 
 ---
 
 ### 🚀 Quick Start
 
-1. **Get the App**: Download the latest `.exe` from [Releases](../../releases).
-2. **Configure Endpoint**: Select a preset provider or manually enter an API address (OpenAI compatible).
-3. **Connectivity Test**: Click **Test Config**. The system validates all keys and outputs a detailed summary in the logs.
-4. **Start Service**: Click **Start Service**.
-5. **Setup Plugin**: Edit `AutoTranslator/Config.ini` in your game folder:
-     ```ini
+#### Method 1: Standard Mode (Line-by-line processing)
+1. Run this program, enter your API details, and click **Test Config**. Once passed, click **Start Service**.
+2. Manually edit the `AutoTranslator/Config.ini` file in your game directory:
+   ```ini
    [Service]
    Endpoint=CustomTranslate
-   FallbackEndpoint=
-   ...
-   [Custom]
-   Url=http://localhost:6800
-   EnableShortDelay=true
-   DisableSpamChecks=true
    
+   [Custom]
+   Url=http://localhost:6800  # Ensure this port matches the one set in the GUI
    ```
+
+#### Method 2: Batch Mode (Concurrent multi-line - Recommended for text-heavy UIs)
+1. Check **📦 Batch Mode** on the main interface of this program.
+2. Ensure you have selected the correct glossary (`.txt`) path in the interface, as the program relies on this path to reverse-locate the game's `Config.ini`.
+3. Click **Start Service** (the program will automatically modify and hijack the game's configuration).
+4. Run the game. When you exit this program, the modified game configuration will be automatically restored.
 
 ---
 
-### 📂 File Structure (C++ Core)
+### 📂 Code Structure Overview
 
 ```text
 src/
-├── TranslationServer.cpp/h     # Core HTTP server & relay logic
-├── MainWindow.cpp/h           # GUI logic & error mapping
-├── HudWindow.cpp/h            # HUD overlay & breathing light
-├── LoadingOverlay.h           # Async button animation component
-├── GlossaryManager.h          # Term extraction & RAG injection
-├── ConfigManager.cpp/h        # Structured config persistence
-├── TokenManager.cpp/h         # Token statistics & tracking
-└── main.cpp                   # Entry point & style initialization
+├── main.cpp                   # Application entry, UI switching & animation control
+├── MainWindow.cpp/h           # Classic mode UI & business logic hub
+├── ModernWindow.cpp/h         # Modern mode UI
+├── TranslationServer.cpp/h    # HTTP server, API interaction & retry logic
+├── XuaConfigHijacker.h        # Auto-modifier and restorer for game config
+├── GlossaryManager.h          # Glossary file I/O & RAG injection logic
+├── RegexManager.h             # Pre/Post regex processing
+├── HudWindow.cpp/h            # HUD overlay & status light
+├── ModernUI.h                 # Modern component library (built-in editor, delegates)
+├── ConfigManager.cpp/h        # Configuration (config.ini) serialization
+└── TokenManager.cpp/h         # Token consumption tracker
 ```
 
 ---
 
-### 🛠️ Compilation & Development
+### 🛠️ Compilation & Development Guide
 
-#### C++ Version
-- **Requirements**: C++17 compatible compiler (MSVC 2019+, MinGW 8.1+), Qt 6.2.0+, CMake 3.16+.
+- **Requirements**: C++17 compatible compiler (e.g., MSVC 2019+, MinGW 8.1+), Qt 6.2.0+, CMake 3.16+.
 - **Build Steps**:
   ```bash
   mkdir build && cd build
@@ -110,32 +103,19 @@ src/
   cmake --build . --config Release
   ```
 
-#### Python Version (Legacy)
-- **Install Deps**: `pip install ttkbootstrap openai requests`
-- **Run**: `python XUnity-Moli@LLMTtranslatedGUI.py`
+> **Note to secondary developers**:
+> To ensure perfect alignment of UI elements and the best visual experience, if you need to perform secondary development on the interface, please try to strictly limit the main window's pixel size to around `500 x 832`.
 
 ---
 
 ### 📦 Deployment & Packaging
-
-- **C++ Version**: Use `windeployqt` to collect runtime dependencies. Can be wrapped into a single executable using **Enigma Virtual Box**.
-- **Python Version**: Recommended to package using `PyInstaller --onefile --windowed`.
-
----
-
-### 🎯 Development Roadmap
-
-- [x] **High-performance Engine**: Native C++ refactor completed.
-- [x] **Config Hot Reload**: Real-time parameter adjustment implemented.
-- [x] **Smart Error System**: 10s timeout & HTTP status localization.
-- [x] **Self-Evolving Glossary**: Automatic term learning during translation.
-- [x] **HUD Mini-Mode**: Status monitoring with 3-color light.
-- [ ] **Multi-Endpoint Load Balancing**: Automatic request distribution.
+- After generating the `.exe`, it is recommended to use `windeployqt` to collect the required Qt runtime dependency libraries.
+- For a single-file release, virtualization tools like **Enigma Virtual Box** can be used to package all dependency environments into a single executable file.
 
 ---
 
 ### 📝 License
-This project is licensed under the **MIT** License.
+This project is open-sourced under the **MIT** License. You are free to use, modify, and distribute the code of this project, provided that the original author's copyright notice is retained.
 
 ---
 
